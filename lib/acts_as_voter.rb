@@ -104,6 +104,17 @@ module ThumbsUp #:nodoc:
               :voteable_type => voteable.class.base_class.name
             ).count
       end
+      
+      def voted_which_way?(voteable)
+         vote=Vote.where(
+              :voter_id => self.id,
+              :voter_type => self.class.base_class.name,
+              :voteable_id => voteable.id,
+              :voteable_type => voteable.class.base_class.name
+            ).first
+         return (vote==nil)?nil: vote.vote    
+         
+      end
 
     end
   end

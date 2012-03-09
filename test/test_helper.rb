@@ -18,8 +18,8 @@ else
     :adapter => 'mysql2',
     :database => 'thumbs_up_test',
     :username => 'test',
-    :password => 'test',
-    :socket => '/tmp/mysql.sock'
+    :password => 'test'
+   
   }
 end
 

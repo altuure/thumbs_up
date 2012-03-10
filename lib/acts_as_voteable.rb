@@ -91,6 +91,19 @@ module ThumbsUp
               :voter_id => voter.id
             ).count
       end
+      
+      def vote_sum
+        list=self.votes.select('vote ,count(*) counts').group('vote')
+        total=0
+        list.each do |v|
+          if v.vote
+            total=v.counts+total            
+          else
+            total=total-v.counts
+          end
+        end
+        total
+      end
 
     end
   end

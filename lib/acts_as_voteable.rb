@@ -11,33 +11,37 @@ module ThumbsUp
 
         include ThumbsUp::ActsAsVoteable::InstanceMethods
         extend  ThumbsUp::ActsAsVoteable::SingletonMethods
-          if (options[:vote_counter])
-            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteCounterClassMethods) unless Vote.respond_to?(:vote_counters)
-            Vote.vote_counters = [self]
-            counter_column_name = (options[:vote_counter] == true) ? :vote_total : options[:vote_counter]
+          if (options[:vote_sum_counter])
+            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteSumCounterClassMethods) unless Vote.respond_to?(:vote_sum_counter)
+            Vote.vote_sum_counters = [self]
+            
+            
+            counter_column_name = (options[:vote_sum_counter] == true) ? :vote_sum_counter : options[:vote_sum_counter]
                 class_eval <<-EOS
-                  def self.vote_counter_column           # def self.vote_counter_column
+                  def self.vote_sum_counter_column           # def self.vote_counter_column
                     :"#{counter_column_name}"            #   :vote_total
                   end                                    # end
-                  def vote_counter_column                
-                    self.class.vote_counter_column       
+                  def vote_sum_counter_column                
+                    self.class.vote_sum_counter_column       
                   end                                    
                 EOS
-           define_method(:reload_vote_counter) {reload(:select => vote_counter_column.to_s)}
+                
+           define_method(:reload_vote_counter) {reload(:select => vote_sum_counter_column.to_s)}
            attr_readonly counter_column_name
          end          
       end
     end
 
-    module VoteCounterClassMethods
+
+    module VoteSumCounterClassMethods
       def self.included(base)
-        base.class_attribute(:vote_counters)
+        base.class_attribute(:vote_sum_counters)
         
-        base.before_save { |record| record.update_vote_counters(nil) }
-        base.before_destroy { |record| record.update_vote_counters(-1) }
+        base.before_save { |record| record.update_vote_sum_counters(nil) }
+        base.before_destroy { |record| record.update_vote_sum_counters(-1) }
       end
 
-      def update_vote_counters direction
+      def update_vote_sum_counters direction
         klass, vtbl = self.voteable.class, self.voteable
        
         v=0
@@ -51,7 +55,7 @@ module ThumbsUp
         v=v+v_was  
         
         if v!=0
-          klass.update_counters(vtbl.id, vtbl.vote_counter_column.to_sym => (v ) ) if self.vote_counters.any?{|c| c == klass}
+          klass.update_counters(vtbl.id, vtbl.vote_sum_counter_column.to_sym => (v ) ) if self.vote_sum_counters.any?{|c| c == klass}
         end
       end
     end

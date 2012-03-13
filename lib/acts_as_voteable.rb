@@ -6,14 +6,55 @@ module ThumbsUp
     end
 
     module ClassMethods
-      def acts_as_voteable
+      def acts_as_voteable options={}
         has_many :votes, :as => :voteable, :dependent => :destroy
 
         include ThumbsUp::ActsAsVoteable::InstanceMethods
         extend  ThumbsUp::ActsAsVoteable::SingletonMethods
+          if (options[:vote_counter])
+            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteCounterClassMethods) unless Vote.respond_to?(:vote_counters)
+            Vote.vote_counters = [self]
+            counter_column_name = (options[:vote_counter] == true) ? :vote_total : options[:vote_counter]
+                class_eval <<-EOS
+                  def self.vote_counter_column           # def self.vote_counter_column
+                    :"#{counter_column_name}"            #   :vote_total
+                  end                                    # end
+                  def vote_counter_column                
+                    self.class.vote_counter_column       
+                  end                                    
+                EOS
+           define_method(:reload_vote_counter) {reload(:select => vote_counter_column.to_s)}
+           attr_readonly counter_column_name
+         end          
       end
     end
 
+    module VoteCounterClassMethods
+      def self.included(base)
+        base.class_attribute(:vote_counters)
+        
+        base.before_save { |record| record.update_vote_counters(nil) }
+        base.before_destroy { |record| record.update_vote_counters(-1) }
+      end
+
+      def update_vote_counters direction
+        klass, vtbl = self.voteable.class, self.voteable
+       
+        v=0
+        v_was=0
+        if self.vote_changed? || (self.new_record? && self.vote==false )   
+          v=(self.vote==true) ? 1 :-1;
+        end
+        if direction!=nil
+            v_was=(self.vote_was==true) ? -1 :1
+        end 
+        v=v+v_was  
+        
+        if v!=0
+          klass.update_counters(vtbl.id, vtbl.vote_counter_column.to_sym => (v ) ) if self.vote_counters.any?{|c| c == klass}
+        end
+      end
+    end
     module SingletonMethods
       
       # Calculate the plusminus for a group of voteables in one database query.

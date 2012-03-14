@@ -8,14 +8,14 @@ module ThumbsUp
     module ClassMethods
       def acts_as_voteable options={}
         has_many :votes, :as => :voteable, :dependent => :destroy
+        
 
         include ThumbsUp::ActsAsVoteable::InstanceMethods
         extend  ThumbsUp::ActsAsVoteable::SingletonMethods
           if (options[:vote_sum_counter])
-            unless Vote.respond_to?(:vote_sum_counter)
-              Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteSumCounterClassMethods) 
-              Vote.vote_sum_counters = [self]
-            end
+            
+              Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteSumCounterClassMethods)  unless Vote.respond_to?(:vote_sum_counters)
+              Vote.vote_sum_counters << self
             
             
             vote_sum_counter_column = (options[:vote_sum_counter] == true) ? :vote_sum_counter : options[:vote_sum_counter]
@@ -34,10 +34,9 @@ module ThumbsUp
          end  
 
         if (options[:vote_counter])
-          unless Vote.respond_to?(:vote_counter)
-            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteCounterClassMethods) 
-            Vote.vote_counters = [self]
-          end
+        
+            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteCounterClassMethods)   unless Vote.respond_to?(:vote_counters)
+            Vote.vote_counters << self
             
             
             counter_column_name = (options[:vote_counter] == true) ? :vote_counter : options[:vote_counter]
@@ -62,7 +61,7 @@ module ThumbsUp
     module VoteSumCounterClassMethods
       def self.included(base)
         base.class_attribute(:vote_sum_counters)
-        
+        base.vote_sum_counters=Array.new
         base.before_save { |record| record.update_vote_sum_counters(nil) }
         base.before_destroy { |record| record.update_vote_sum_counters(-1) }
       end
@@ -89,7 +88,7 @@ module ThumbsUp
     module VoteCounterClassMethods
       def self.included(base)
         base.class_attribute(:vote_counters)
-        
+        base.vote_counters=Array.new
         base.before_create { |record| record.update_vote_counters(+1) }
         base.before_destroy { |record| record.update_vote_counters(-1) }
       end

@@ -12,8 +12,10 @@ module ThumbsUp
         include ThumbsUp::ActsAsVoteable::InstanceMethods
         extend  ThumbsUp::ActsAsVoteable::SingletonMethods
           if (options[:vote_sum_counter])
-            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteSumCounterClassMethods) unless Vote.respond_to?(:vote_sum_counter)
-            Vote.vote_sum_counters = [self]
+            unless Vote.respond_to?(:vote_sum_counter)
+              Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteSumCounterClassMethods) 
+              Vote.vote_sum_counters = [self]
+            end
             
             
             counter_column_name = (options[:vote_sum_counter] == true) ? :vote_sum_counter : options[:vote_sum_counter]
@@ -31,8 +33,10 @@ module ThumbsUp
          end  
 
         if (options[:vote_counter])
-            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteCounterClassMethods) unless Vote.respond_to?(:vote_counter)
+          unless Vote.respond_to?(:vote_counter)
+            Vote.send(:include,  ThumbsUp::ActsAsVoteable::VoteCounterClassMethods) 
             Vote.vote_counters = [self]
+          end
             
             
             counter_column_name = (options[:vote_counter] == true) ? :vote_counter : options[:vote_counter]

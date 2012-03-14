@@ -18,10 +18,11 @@ module ThumbsUp
             end
             
             
-            counter_column_name = (options[:vote_sum_counter] == true) ? :vote_sum_counter : options[:vote_sum_counter]
+            vote_sum_counter_column = (options[:vote_sum_counter] == true) ? :vote_sum_counter : options[:vote_sum_counter]
+            
                 class_eval <<-EOS
                   def self.vote_sum_counter_column           # def self.vote_counter_column
-                    :"#{counter_column_name}"            #   :vote_total
+                    :"#{vote_sum_counter_column}"            #   :vote_total
                   end                                    # end
                   def vote_sum_counter_column                
                     self.class.vote_sum_counter_column       
@@ -29,7 +30,7 @@ module ThumbsUp
                 EOS
                 
            define_method(:reload_vote_sum_counter) {reload(:select => vote_sum_counter_column.to_s)}
-           attr_readonly counter_column_name
+           attr_readonly vote_sum_counter_column
          end  
 
         if (options[:vote_counter])
@@ -40,6 +41,7 @@ module ThumbsUp
             
             
             counter_column_name = (options[:vote_counter] == true) ? :vote_counter : options[:vote_counter]
+            
                 class_eval <<-EOS
                   def self.vote_counter_column           # def self.vote_counter_column
                     :"#{counter_column_name}"            #   :vote_total
